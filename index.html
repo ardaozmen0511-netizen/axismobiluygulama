@@ -119,6 +119,53 @@
   .keycard { margin-top: 18px; padding: 12px 14px; border-radius: 14px; border: 1px solid #5a3a2a; background: rgba(194, 136, 78, .1); color: #f0c99e; font-size: 13.5px; text-align: left; }
   .keycard button { margin-top: 8px; background: var(--grad); color: #fff; font-weight: 600; border-radius: 10px; padding: 7px 12px; font-size: 13px; }
   .wide { width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel2); font-size: 14px; }
+  /* Plan */
+  .plan { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); font-size: 12.5px; color: var(--dim); }
+  .plan b { color: var(--text); font-weight: 600; }
+  .plan.pro { border-color: transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--grad) border-box; border: 1px solid transparent; }
+  .plan.low b { color: #ffb86b; }
+  .err .cta { display: inline-block; margin-top: 8px; background: var(--grad); color: #fff; font-weight: 600; border-radius: 10px; padding: 6px 12px; font-size: 13px; }
+  .acct { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); font-size: 14px; }
+  .acct .who { color: var(--dim); font-size: 13px; }
+  .acct .meter { height: 6px; border-radius: 3px; background: var(--line); margin: 10px 0 6px; overflow: hidden; }
+  .acct .meter i { display: block; height: 100%; background: var(--grad); }
+  .row2 { display: flex; gap: 8px; margin-top: 10px; } .row2 .wide { margin-top: 0; }
+  .gbtn { background: var(--grad) !important; color: #fff; font-weight: 600; border: 0 !important; }
+
+  /* Giriş ekranı */
+  #auth { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow-y: auto; padding: calc(var(--top) + 24px) 20px calc(var(--bottom) + 24px); display: none; }
+  body.locked #auth { display: block; }
+  .auth { max-width: 420px; margin: 0 auto; }
+  .auth .wlogo { display: block; width: min(260px, 70%); margin: 0 auto 6px; filter: drop-shadow(0 0 26px rgba(43, 114, 253, .4)); }
+  .auth p.lead { color: var(--dim); text-align: center; margin-bottom: 20px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 4px; margin-bottom: 16px; }
+  .tabs button { padding: 9px; border-radius: 10px; color: var(--dim); font-weight: 600; }
+  .tabs button.on { background: var(--grad); color: #fff; }
+  .auth label { display: block; font-size: 13px; color: var(--dim); margin: 12px 0 5px; }
+  .auth input[type=email], .auth input[type=password], .auth input[type=text] { width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; color: var(--text); font: inherit; font-size: 16px; }
+  .auth input:focus { border-color: var(--c2); outline: none; }
+  .check { display: flex !important; gap: 10px; align-items: flex-start; color: var(--text) !important; font-size: 13.5px !important; line-height: 1.45; }
+  .check input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: #2b72fd; }
+  .auth .go { width: 100%; margin-top: 18px; padding: 13px; border-radius: 12px; background: var(--grad); color: #fff; font-weight: 700; font-size: 16px; }
+  .auth .go:disabled { opacity: .6; }
+  .aerr { color: #ffb3b3; font-size: 14px; margin-top: 10px; min-height: 1.3em; }
+  .fine { color: #5f6a90; font-size: 12px; margin-top: 18px; line-height: 1.5; text-align: center; }
+  details.info { margin-top: 12px; font-size: 13px; color: var(--dim); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  details.info summary { cursor: pointer; color: var(--text); }
+  details.info p { margin-top: 8px; line-height: 1.5; }
+
+  /* 1.2 penceresi */
+  #up { position: fixed; inset: 0; z-index: 15; background: rgba(0,0,0,.6); display: none; align-items: flex-end; }
+  body.upgrade #up { display: flex; }
+  .upbox { width: 100%; max-height: 90dvh; overflow-y: auto; background: var(--panel); border-top: 1px solid var(--line); border-radius: 20px 20px 0 0; padding: 18px 16px calc(var(--bottom) + 18px); }
+  .upbox h2 { font-size: 20px; margin-bottom: 4px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+  .tier { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--panel2); font-size: 13.5px; }
+  .tier.pro { background: linear-gradient(var(--panel2), var(--panel2)) padding-box, var(--grad) border-box; border: 1.5px solid transparent; }
+  .tier h3 { font-size: 15px; margin-bottom: 2px; } .tier .price { font-size: 13px; color: var(--dim); margin-bottom: 8px; }
+  .tier ul { list-style: none; display: grid; gap: 5px; } .tier li::before { content: "✓ "; color: var(--c); }
+  .howpay { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--panel2); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .howpay b { display: block; margin-bottom: 4px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -127,6 +174,7 @@
   <img class="logo" src="/logo_axis_mark.png" alt="AXIS">
   <div class="status"><span class="dot"></span><span id="statusText">Hazır</span></div>
   <div class="spacer"></div>
+  <button class="plan" id="planBtn" aria-label="Planın"><b id="planLabel">1.0</b><span id="planLeft"></span></button>
   <button class="ibtn" id="newBtn" aria-label="Yeni sohbet">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
   </button>
@@ -155,16 +203,66 @@
   <div class="sbody">
     <h3>Adın</h3>
     <div class="field"><input id="nameIn" maxlength="40" placeholder="AXIS sana nasıl hitap etsin?" autocomplete="given-name"></div>
-    <h3>Claude API anahtarı</h3>
-    <div class="field"><input id="keyIn" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"><button class="ibtn" id="keySave" aria-label="Kaydet">✓</button></div>
-    <div class="empty" id="keyInfo" style="margin-top:6px;font-size:12.5px"></div>
+    <h3>Hesabın</h3>
+    <div class="acct" id="acct"></div>
     <h3>AXIS'in notları</h3><div id="facts"></div>
     <h3>Çalışılacaklar</h3><div id="notes"></div>
     <button class="wide" id="resetBtn">Sohbeti temizle</button>
   </div>
-  <div class="sfoot"><img src="/logo_alreonx.png" alt="AlreonX"><small>Anahtarın, notların ve sohbetin sadece bu telefonda saklanır.</small></div>
+  <div class="sfoot"><img src="/logo_alreonx.png" alt="AlreonX"><small>Notların ve sohbetin bu telefonda saklanır. AXIS bir yapay zekâdır, hata yapabilir.</small></div>
 </section>
 
+<section id="up" aria-label="AXIS 1.2">
+  <div class="upbox">
+    <h2>AXIS 1.2'ye geç</h2>
+    <div class="empty" id="upSub">Daha çok soru, daha uzun cevaplar.</div>
+    <div class="compare">
+      <div class="tier"><h3>AXIS 1.0</h3><div class="price">Ücretsiz</div><ul id="tFree"></ul></div>
+      <div class="tier pro"><h3>AXIS 1.2</h3><div class="price" id="tPrice"></div><ul id="tPro"></ul></div>
+    </div>
+    <div class="howpay"><b>Nasıl alırım?</b><span id="payInfo">Yükleniyor…</span>
+
+Ödeme açıklamasına AXIS e-postanı yaz: <b style="display:inline" id="payEmail"></b>
+Ödemen onaylanınca 1.2 hesabına açılır, uygulamayı yeniden açman yeterli.</div>
+    <div class="row2" style="margin-top:14px"><button class="wide" id="upClose">Kapat</button><button class="wide gbtn" id="upRefresh">Ödedim, kontrol et</button></div>
+  </div>
+</section>
+
+<section id="auth" aria-label="Giriş">
+  <div class="auth">
+    <img class="wlogo" src="/logo_axis.png" alt="AXIS — AlreonX Intelligent System">
+    <p class="lead">AlreonX'in yapay zekâ öğretmen yardımcısı</p>
+    <div class="tabs" role="tablist"><button id="tabReg" class="on" type="button">Hesap aç</button><button id="tabLogin" type="button">Giriş yap</button></div>
+    <form id="authForm" novalidate>
+      <div id="regOnly">
+        <label for="aName">Adın</label>
+        <input id="aName" type="text" maxlength="40" autocomplete="given-name" placeholder="AXIS sana nasıl hitap etsin?">
+      </div>
+      <label for="aEmail">E-posta</label>
+      <input id="aEmail" type="email" autocomplete="email" inputmode="email" placeholder="ornek@mail.com" required>
+      <label for="aPass">Şifre</label>
+      <input id="aPass" type="password" autocomplete="new-password" placeholder="En az 8 karakter" required minlength="8">
+      <div id="regChecks">
+        <label class="check"><input type="checkbox" id="aTerms"><span>Aşağıdaki bilgilendirmeyi okudum. AXIS'in bir yapay zekâ olduğunu ve hata yapabileceğini biliyorum.</span></label>
+        <label class="check"><input type="checkbox" id="aMinor"><span>18 yaşından küçüğüm ve AXIS'i velimin izniyle kullanıyorum.</span></label>
+        <details class="info"><summary>Bilgilendirme ve gizlilik</summary>
+          <p>Hesabın için adın, e-postan, şifrenin şifrelenmiş hâli ve günlük mesaj sayın AlreonX'in sunucusunda saklanır. Sohbetlerin ve AXIS'in senin hakkındaki notları sadece bu telefonda durur.</p>
+          <p>AXIS'e yazdığın mesajlar cevap üretilmesi için Anthropic'in Claude yapay zekâsına gönderilir. Adres, telefon, şifre gibi kişisel bilgilerini AXIS'e yazma.</p>
+          <p>AXIS 1.0 ücretsizdir, günlük mesaj sınırı vardır. Hesabını silmek için alreonxyazilim@outlook.com adresine yaz.</p>
+        </details>
+      </div>
+      <button class="go" id="authGo" type="submit">Hesap aç</button>
+      <div class="aerr" id="authErr" role="alert"></div>
+    </form>
+    <p class="fine">AXIS 1.0 ücretsiz: günde <span class="fLimit">15</span> mesaj.<br>AlreonX Yazılım · Kodu yaz, devreyi kur.</p>
+  </div>
+</section>
+
+<script>
+  /* AXIS sunucusunun adresi. Uygulama sunucunun kendisinden açılıyorsa boş bırak.
+     Vercel'de ayrı yayınlanıyorsa Render adresini yaz, ör. "https://axis-sunucu.onrender.com" */
+  window.AXIS_API = "https://axis-sunucu.onrender.com";
+</script>
 <script src="/axis-core.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -206,7 +304,7 @@ const QUICK = ["💡 Bir ipucu daha", "✅ Çözümü göster", "🐢 Daha basit
 
 // ---------- Çizim ----------
 const inner = $("inner"), chat = $("chat"), box = $("msg"), sendBtn = $("send");
-let pending = null, deferredInstall = null, serverMode = false;
+let pending = null, deferredInstall = null;
 
 function visible() {
   const log = AXIS.state.log; let start = 0;
@@ -222,14 +320,13 @@ function render() {
     h = `<div id="welcome"><img class="wlogo" src="/logo_axis.png" alt="AXIS — AlreonX Intelligent System">
       <h1>Merhaba${name} 👋</h1><p>Ben AXIS, AlreonX öğretmen yardımcın. <b>${esc(course)}</b> dersinde nerede takıldın?</p>
       <div class="chips">${SUGGEST[course].map(([k, a, b, f]) => `<button class="chip" ${k === "fill" ? `data-fill="${esc(f)}"` : `data-q="${esc(a)}"`}><b>${esc(a)}</b><small>${esc(b)}</small></button>`).join("")}</div>
-      ${!st.apiKey && !serverMode ? `<div class="keycard">Başlamak için Claude API anahtarını gir. Anahtar sadece bu telefonda saklanır.<br><button data-openkey="1">Anahtarı gir</button></div>` : ""}
       <div class="install${deferredInstall ? " show" : ""}" id="install"><span>AXIS'i ana ekrana ekle, uygulama gibi aç.</span><button data-install="1">Yükle</button></div></div>`;
   }
   for (const e of items) {
     if (e.kind === "user") h += `<div class="msg user"><div class="bubble">${md(e.text)}</div></div>`;
     else if (e.kind === "axis") h += `<div class="msg axis"><div class="avatar"></div><div class="bubble">${md(e.text)}</div></div>`;
     else if (e.kind === "tool") h += `<div class="tool"><span>${esc(e.text)}</span></div>`;
-    else if (e.kind === "err") h += `<div class="err">⚠️ ${esc(e.text)}</div>`;
+    else if (e.kind === "err") h += `<div class="err">⚠️ ${esc(e.text)}${e.code === "limit" && !(st.me && st.me.plan === "pro") ? '<br><button class="cta" data-upgrade="1">AXIS 1.2\'ye bak</button>' : e.code === "login" ? '<br><button class="cta" data-relogin="1">Tekrar giriş yap</button>' : ""}</div>`;
   }
   const last = items[items.length - 1];
   if (AXIS.busy) h += `<div class="msg axis typing"><div class="avatar"></div><div class="bubble"><div class="dots"><i></i><i></i><i></i></div>Düşünüyor…</div></div>`;
@@ -244,9 +341,26 @@ function render() {
     : '<div class="empty">Henüz bir şey bilmiyor. Ona hangi konuda zorlandığını anlat, buraya kaydetsin.</div>';
   $("notes").innerHTML = st.notes.length ? st.notes.map(x => `<div class="item"><span>${esc(x.text)}<small>${esc(x.t)}</small></span><button aria-label="Tamamlandı" data-done="${esc(x.text)}">✓</button></div>`).join("")
     : '<div class="empty">"Yarın döngüleri çalışmamı hatırlat" gibi söyleyebilirsin.</div>';
+  renderPlan();
   $("hdr").classList.toggle("thinking", AXIS.busy);
   $("statusText").textContent = AXIS.busy ? "Düşünüyor…" : "Hazır";
   grow();
+}
+
+function renderPlan() {
+  const me = AXIS.state.me;
+  document.body.classList.toggle("locked", !AXIS.state.token);
+  if (!me) return;
+  const pro = me.plan === "pro";
+  $("planBtn").classList.toggle("pro", pro);
+  $("planBtn").classList.toggle("low", me.remaining <= 3);
+  $("planLabel").textContent = pro ? "1.2" : "1.0";
+  $("planLeft").textContent = `${me.remaining}/${me.limit}`;
+  $("acct").innerHTML = `<b>${esc(me.label)}</b>${pro && me.pro_until ? ` · ${esc(me.pro_until)} tarihine kadar` : ""}
+    <div class="who">${esc(me.email)}</div>
+    <div class="meter"><i style="width:${Math.min(100, me.used / me.limit * 100)}%"></i></div>
+    <div class="who">Bugün ${me.used}/${me.limit} mesaj kullandın. Her gece yenilenir.</div>
+    <div class="row2">${pro ? "" : '<button class="wide gbtn" data-upgrade="1">AXIS 1.2\'ye geç</button>'}<button class="wide" id="logoutBtn">Çıkış yap</button></div>`;
 }
 
 function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; sendBtn.disabled = AXIS.busy || !box.value.trim(); }
@@ -266,23 +380,21 @@ sendBtn.addEventListener("click", () => send());
 $("newBtn").addEventListener("click", () => { if (!AXIS.busy) { AXIS.reset(); render(); } });
 function openSheet(focusKey) {
   $("nameIn").value = AXIS.state.name;
-  $("keyIn").value = AXIS.state.apiKey;
-  $("keyInfo").textContent = AXIS.state.apiKey ? "Kayıtlı ✓ Sadece bu telefonda saklanıyor." : (serverMode ? "Gerekmiyor: AXIS sunucusu üzerinden bağlısın." : "console.anthropic.com → API Keys'ten alabilirsin.");
+  AXIS.refreshMe().then(render).catch(() => {});
   document.body.classList.add("open");
-  if (focusKey) setTimeout(() => $("keyIn").focus(), 250);
 }
 $("progBtn").addEventListener("click", () => openSheet(false));
-$("keySave").addEventListener("click", () => { AXIS.state.apiKey = $("keyIn").value; openSheet(false); render(); });
-$("keyIn").addEventListener("change", e => { AXIS.state.apiKey = e.target.value; render(); });
 const closeSheet = () => document.body.classList.remove("open");
 $("closeBtn").addEventListener("click", closeSheet); $("shade").addEventListener("click", closeSheet);
 $("nameIn").addEventListener("change", e => { AXIS.state.name = e.target.value; render(); });
 $("resetBtn").addEventListener("click", () => { if (!AXIS.busy) { AXIS.reset(); closeSheet(); render(); } });
 
 document.body.addEventListener("click", async e => {
-  const t = e.target.closest("[data-q],[data-fill],[data-course],[data-forget],[data-done],[data-install],[data-openkey],.codecopy");
+  if (e.target.id === "logoutBtn") { await AXIS.logout(); closeSheet(); render(); return; }
+  const t = e.target.closest("[data-q],[data-fill],[data-course],[data-forget],[data-done],[data-install],[data-upgrade],[data-relogin],.codecopy");
   if (!t) return;
-  if (t.dataset.openkey) openSheet(true);
+  if (t.dataset.upgrade) { closeSheet(); openUpgrade(); }
+  else if (t.dataset.relogin) { await AXIS.logout(); render(); }
   else if (t.dataset.q) send(t.dataset.q);
   else if (t.dataset.fill) { box.value = t.dataset.fill; grow(); box.focus(); const i = box.value.indexOf("```"); const p = i >= 0 ? box.value.indexOf("\n", i) + 1 : box.value.length; box.setSelectionRange(p, p); }
   else if (t.dataset.course) { if (!AXIS.busy) { AXIS.state.course = t.dataset.course; render(); } }
@@ -299,8 +411,59 @@ document.body.addEventListener("click", async e => {
 addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; if (!visible().length) render(); });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
-// AXIS sunucusu üzerinden mi açıldık? (öyleyse anahtar gerekmez)
-fetch("/health", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { serverMode = !!(j && j.ok && j.name === "AXIS sunucusu"); render(); }).catch(() => {});
+// ---------- Hesap: giriş / kayıt ----------
+let regMode = true, planInfo = null;
+function setMode(reg) {
+  regMode = reg;
+  $("tabReg").classList.toggle("on", reg); $("tabLogin").classList.toggle("on", !reg);
+  $("regOnly").hidden = !reg; $("regChecks").hidden = !reg;
+  $("authGo").textContent = reg ? "Hesap aç" : "Giriş yap";
+  $("aPass").autocomplete = reg ? "new-password" : "current-password";
+  $("authErr").textContent = "";
+}
+$("tabReg").addEventListener("click", () => setMode(true));
+$("tabLogin").addEventListener("click", () => setMode(false));
+$("authForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = $("aEmail").value.trim(), password = $("aPass").value;
+  if (regMode && !$("aTerms").checked) { $("authErr").textContent = "Devam etmek için bilgilendirmeyi onayla."; return; }
+  if (password.length < 8) { $("authErr").textContent = "Şifre en az 8 karakter olmalı."; return; }
+  $("authGo").disabled = true; $("authErr").textContent = "";
+  try {
+    if (regMode) await AXIS.register({ email, password, name: $("aName").value.trim(), terms: true, minor: $("aMinor").checked });
+    else await AXIS.login(email, password);
+    $("aPass").value = "";
+    render();
+  } catch (err) { $("authErr").textContent = err.message; }
+  finally { $("authGo").disabled = false; }
+});
+
+// ---------- AXIS 1.2 ----------
+async function openUpgrade() {
+  document.body.classList.add("upgrade");
+  $("payEmail").textContent = (AXIS.state.me && AXIS.state.me.email) || "";
+  try {
+    planInfo = planInfo || await AXIS.plans();
+    const f = planInfo.plans.free, p = planInfo.plans.pro;
+    $("tPrice").textContent = planInfo.price;
+    $("tFree").innerHTML = `<li>Günde ${f.daily} mesaj</li><li>Kısa cevaplar</li><li>Tüm kurslar</li>`;
+    $("tPro").innerHTML = `<li>Günde ${p.daily} mesaj</li><li>Daha uzun cevaplar</li><li>İnternetten güncel bilgi</li><li>Tüm kurslar</li>`;
+    $("payInfo").textContent = planInfo.payment_info;
+  } catch (e) { $("payInfo").textContent = e.message; }
+}
+$("planBtn").addEventListener("click", () => { const me = AXIS.state.me; if (me && me.plan === "pro") openSheet(false); else openUpgrade(); });
+$("upClose").addEventListener("click", () => document.body.classList.remove("upgrade"));
+$("upRefresh").addEventListener("click", async () => {
+  try {
+    const me = await AXIS.refreshMe();
+    render();
+    if (me && me.plan === "pro") { document.body.classList.remove("upgrade"); }
+    else $("payInfo").textContent = "Henüz onaylanmadı. Ödemen kontrol edilince 1.2 açılacak. " + (planInfo ? planInfo.payment_info : "");
+  } catch (e) { $("payInfo").textContent = e.message; }
+});
+
+AXIS.plans().then(p => { planInfo = p; document.querySelectorAll(".fLimit").forEach(x => x.textContent = p.plans.free.daily); }).catch(() => {});
+if (AXIS.state.token) AXIS.refreshMe().then(render).catch(render);
 render();
 </script>
 </body>

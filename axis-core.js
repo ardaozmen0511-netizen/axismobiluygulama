@@ -1,7 +1,7 @@
 /* AXIS mobil çekirdek: öğretmen yardımcısı ajanı + telefonda saklanan hafıza.
-   İki bağlantı şekli:
-   - Kişisel mod: Claude API anahtarı SADECE bu telefonda saklanır, doğrudan Claude'a bağlanır.
-   - Sunucu modu: anahtar yoksa AXIS sunucusunun /v1/messages adresine bağlanır. */
+   Öğrenci AXIS hesabıyla giriş yapar; mesajlar AXIS sunucusuna gider, sunucu planı
+   (AXIS 1.0 ücretsiz / AXIS 1.2 ücretli) ve günlük limiti kontrol edip Claude'a iletir.
+   Sunucunun adresi: index.html'deki window.AXIS_API (boşsa uygulamayı sunan adres). */
 (function (root) {
   "use strict";
 
@@ -28,22 +28,23 @@
     return id;
   }
 
+  const API = () => String(root.AXIS_API || "").replace(/\/$/, "");
+
   const state = {
     get course() { return get("axis_course", "Python"); },
     set course(c) { if (COURSES.includes(c)) set("axis_course", c); },
     get name() { return get("axis_name", ""); },
     set name(n) { set("axis_name", String(n || "").trim().slice(0, 40)); },
-    get apiKey() { return get("axis_key", ""); },
-    set apiKey(k) { set("axis_key", String(k || "").trim()); },
-    get model() { return get("axis_model", "claude-sonnet-5-5"); },
+    get token() { return get("axis_token", ""); },
+    get me() { return get("axis_me", null); },     // {email, name, plan, label, limit, used, remaining, pro_until}
     get facts() { return get("axis_facts", []); },
     get notes() { return get("axis_notes", []); },
     get log() { return get("axis_log", []); },   // ekranda görünen: {kind: user|axis|tool|err, text}
   };
 
-  function addLog(kind, text) {
+  function addLog(kind, text, code) {
     const log = state.log;
-    log.push({ kind, text, t: Date.now() });
+    log.push(code ? { kind, text, code, t: Date.now() } : { kind, text, t: Date.now() });
     set("axis_log", log.slice(-200));
   }
 
@@ -95,7 +96,7 @@
       "Öğrenci seninle TELEFONDAN yazışıyor: cevaplarını kısa paragraflarla ver, kod örneklerini kısa tut (telefon ekranına sığsın), uzun tablolardan kaçın.",
       `Öğrencinin şu an çalıştığı kurs: **${course}**. Aksi belirtilmedikçe cevaplarını bu kursa göre ver.`,
       "ÖĞRETİM KURALLARIN:\n1. ÖNCE İPUCU: Öğrenci hatalı kod, ödev veya takıldığı bir problem getirdiğinde hazır çözümü hemen verme. Sorunun nerede olduğunu sezdiren kısa bir ipucu ver ve düşünmesini sağlayacak bir soru sor.\n2. Öğrenci yine takılırsa daha belirgin bir ipucu ver (hangi satır, hangi kavram).\n3. Öğrenci 'çözümü göster' derse ya da iki ipucundan sonra hâlâ takılıyorsa düzeltilmiş kodu ver ve her değişikliği kısaca açıkla; sonunda küçük bir alıştırma öner.\n4. Kavram sorularında ipucu kuralı yoktur: doğrudan, basit ve kısa bir örnekle anlat.\n5. Hata mesajlarını Türkçeye çevir, ne anlama geldiğini ve genelde neden çıktığını açıkla.\n6. Arduino/ESP32'de pin bağlantılarını adım adım yaz; direnç, 3.3V/5V farkı ve kısa devre konusunda uyar.\n7. Kod bloklarında dil etiketi kullan (```python, ```c, ```cpp).\n8. Ödevi baştan sona yazıp verme; adım adım götür.\n9. Kodlama ve elektronik dışı sorulara kısaca cevap ver ama nazikçe derse dön.\n10. Öğrencinin seviyesi veya zorlandığı konular hakkında kalıcı bir şey öğrenirsen 'remember' ile kaydet.",
-      "Güncel belge veya kütüphane bilgisi gerekirse internette arama yapabilirsin. Telefonda kod çalıştıramazsın; kodu satır satır açıklayarak yardım et.",
+      (state.me && state.me.web ? "Güncel belge veya kütüphane bilgisi gerekirse internette arama yapabilirsin. " : "İnternette arama yapamazsın; bilmediğin güncel bir bilgi sorulursa bunu açıkça söyle. ") + "Telefonda kod çalıştıramazsın; kodu satır satır açıklayarak yardım et. Cevaplarını kısa ve öz tut.",
       `Şu an: ${DAYS[now.getDay()]}, ${now.toLocaleString("tr-TR")}`,
       `Öğrenci (${name}) hakkında bildiklerin:\n${facts}`,
       `Çalışılacaklar / notlar:\n${notes}`,
@@ -133,6 +134,39 @@
 
   function reset() { history = []; addLog("reset", ""); }
 
+  // ---------- Hesap ----------
+  async function call(path, body, auth) {
+    let r;
+    try {
+      r = await fetch(API() + path, {
+        method: body ? "POST" : "GET",
+        headers: Object.assign({ "content-type": "application/json" }, auth ? { "x-api-key": state.token } : {}),
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) { throw new Error("AXIS sunucusuna ulaşılamadı. İnternet bağlantını kontrol et."); }
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+    if (!r.ok) {
+      const er = new Error((data && data.error && data.error.message) || `Sunucu hatası (${r.status}).`);
+      er.status = r.status; er.code = data && data.error && data.error.code;
+      throw er;
+    }
+    return data;
+  }
+  function saveSession(d) { set("axis_token", d.token); set("axis_me", d.me); if (d.me && d.me.name && !state.name) state.name = d.me.name; }
+  async function register(f) { saveSession(await call("/api/register", f)); }
+  async function login(email, password) { saveSession(await call("/api/login", { email, password })); }
+  async function logout() {
+    try { await call("/api/logout", {}, true); } catch (e) {}
+    S.removeItem("axis_token"); S.removeItem("axis_me");
+  }
+  async function refreshMe() {
+    if (!state.token) return null;
+    try { const me = await call("/api/me", null, true); set("axis_me", me); return me; }
+    catch (e) { if (e.status === 401) { S.removeItem("axis_token"); S.removeItem("axis_me"); } throw e; }
+  }
+  const plans = () => call("/api/plans");
+
   // ---------- Ana döngü ----------
   let busy = false;
   async function send(userText, opts = {}) {
@@ -149,22 +183,21 @@
       addLog("user", userText); onStep();
       let resp = null;
       for (let step = 0; step < 10; step++) {
-        const key = state.apiKey;
-        const body = { model: state.model, system, messages: history, tools: TOOLS.concat(webOk ? [WEB_TOOL] : []), max_tokens: 2048 };
-        const url = key ? (opts.apiBase || "https://api.anthropic.com") + "/v1/messages" : base + "/v1/messages";
-        const headers = key
-          ? { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }
-          : { "content-type": "application/json", "x-api-key": deviceId(), "anthropic-version": "2023-06-01" };
-        const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+        const me = state.me;
+        const web = webOk && me && me.web;
+        const body = { model: "axis", system, messages: history, tools: TOOLS.concat(web ? [WEB_TOOL] : []), max_tokens: 2048 };
+        const headers = { "content-type": "application/json", "x-api-key": state.token, "anthropic-version": "2023-06-01" };
+        const r = await fetch((base || API()) + "/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
         let data = null;
         try { data = await r.json(); } catch (e) {}
+        const rem = r.headers.get("x-axis-remaining");
+        if (rem !== null && me) { me.remaining = Number(rem); me.used = me.limit - me.remaining; set("axis_me", me); }
         if (!r.ok) {
-          let msg = (data && data.error && data.error.message) || `Sunucu hatası (${r.status}).`;
-          if (!key && [401, 404, 405].includes(r.status)) msg = "Claude API anahtarı girilmemiş. Sağ üstteki ampul düğmesine bas ve anahtarını gir.";
-          else if (key && r.status === 401) msg = "Claude API anahtarı geçersiz. Ampul düğmesinden kontrol et.";
-          else if (key && /credit balance/i.test(msg)) msg = "Anthropic hesabında bakiye kalmamış. console.anthropic.com → Billing.";
-          if (r.status === 400 && webOk && /web_search/i.test(msg)) { webOk = false; continue; }
-          throw new Error(msg);
+          const er = new Error((data && data.error && data.error.message) || `Sunucu hatası (${r.status}).`);
+          er.code = (data && data.error && data.error.code) || (r.status === 401 ? "login" : "");
+          if (r.status === 401) { S.removeItem("axis_token"); }
+          if (r.status === 400 && webOk && /web_search/i.test(er.message)) { webOk = false; continue; }
+          throw er;
         }
         resp = data;
         history.push({ role: "assistant", content: resp.content });
@@ -190,13 +223,13 @@
       return text;
     } catch (e) {
       history.splice(start);                       // yarım kalan turu geri al
-      const msg = /Failed to fetch|NetworkError|fetch failed/i.test(e.message) ? "AXIS sunucusuna ulaşılamadı. İnternet bağlantını kontrol et." : e.message;
-      addLog("err", msg);
-      throw new Error(msg);
+      const msg = /Failed to fetch|NetworkError|fetch failed|Load failed/i.test(e.message) ? "AXIS sunucusuna ulaşılamadı. İnternet bağlantını kontrol et." : e.message;
+      addLog("err", msg, e.code);
+      const er = new Error(msg); er.code = e.code; throw er;
     } finally {
       busy = false; onStep();
     }
   }
 
-  root.AXIS = { COURSES, state, send, reset, forgetExact, noteDone, deviceId, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
+  root.AXIS = { COURSES, state, send, reset, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
 })(typeof window !== "undefined" ? window : globalThis);
