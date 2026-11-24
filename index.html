@@ -166,6 +166,30 @@
   .tier ul { list-style: none; display: grid; gap: 5px; } .tier li::before { content: "✓ "; color: var(--c); }
   .howpay { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--panel2); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .howpay b { display: block; margin-bottom: 4px; }
+  /* Dosya ekleri */
+  .attach { width: 36px; height: 36px; margin-bottom: 2px; border-radius: 12px; display: grid; place-items: center; color: var(--dim); flex: none; }
+  .attach:hover { color: var(--text); background: var(--panel2); }
+  .composer { padding-left: 6px; }
+  .files { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 2px 8px; }
+  .files:empty { display: none; }
+  .fchip { display: flex; align-items: center; gap: 6px; max-width: 220px; padding: 5px 6px 5px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); font-size: 12.5px; }
+  .fchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fchip img { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; }
+  .fchip button { color: var(--dim); font-size: 15px; padding: 0 4px; }
+  .fchip.busy { opacity: .6; }
+  #drop { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(4, 5, 13, .82); border: 2px dashed var(--c2); font-size: 18px; color: var(--text); }
+  body.dragging #drop { display: grid; }
+  .plan.unl { background: var(--grad); color: #fff; border-color: transparent; } .plan.unl b { color: #fff; }
+
+  /* Bilgisayarda: ortalanmış, okunaklı genişlik */
+  @media (min-width: 900px) {
+    header, .courses, #inner, footer { width: 100%; max-width: 860px; margin-left: auto; margin-right: auto; }
+    .courses { border-bottom: 0; }
+    #chat { border-top: 1px solid var(--line); }
+    .bubble { max-width: 78%; }
+    .chips { grid-template-columns: repeat(4, 1fr); }
+    #sheet, .upbox { max-width: 560px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -188,14 +212,20 @@
 <main id="chat"><div id="inner"></div></main>
 
 <footer>
+  <div class="files" id="files"></div>
   <div class="composer">
-    <textarea id="msg" rows="1" placeholder="Sorunu yaz ya da kodunu yapıştır…" enterkeyhint="send"></textarea>
+    <button class="attach" id="attachBtn" aria-label="Dosya ekle" title="Dosya ekle (kod, metin, görsel, PDF)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg>
+    </button>
+    <input type="file" id="fileIn" multiple hidden accept=".py,.c,.cpp,.h,.hpp,.ino,.txt,.md,.json,.csv,.js,.html,.css,.xml,.yml,.yaml,.log,.ini,.cfg,.toml,.java,.cs,.sh,.bat,image/*,application/pdf">
+    <textarea id="msg" rows="1" placeholder="Sorunu yaz, kodunu yapıştır ya da dosya ekle…" enterkeyhint="send"></textarea>
     <button id="send" aria-label="Gönder" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
     </button>
   </div>
 </footer>
 
+<div id="drop">Dosyayı bırak, AXIS'e ekleyelim</div>
 <div id="shade"></div>
 <section id="sheet" aria-label="İlerlemen">
   <div class="grab"></div>
@@ -354,8 +384,10 @@ function renderPlan() {
   const pro = me.plan === "pro";
   $("planBtn").classList.toggle("pro", pro);
   $("planBtn").classList.toggle("low", me.remaining <= 3);
-  $("planLabel").textContent = pro ? "1.2" : "1.0";
-  $("planLeft").textContent = `${me.remaining}/${me.limit}`;
+  const unl = AXIS.state.unlimited;
+  $("planBtn").classList.toggle("unl", unl);
+  $("planLabel").textContent = unl ? "∞" : pro ? "1.2" : "1.0";
+  $("planLeft").textContent = unl ? "sınırsız" : `${me.remaining}/${me.limit}`;
   $("acct").innerHTML = `<b>${esc(me.label)}</b>${pro && me.pro_until ? ` · ${esc(me.pro_until)} tarihine kadar` : ""}
     <div class="who">${esc(me.email)}</div>
     <div class="meter"><i style="width:${Math.min(100, me.used / me.limit * 100)}%"></i></div>
@@ -363,13 +395,53 @@ function renderPlan() {
     <div class="row2">${pro ? "" : '<button class="wide gbtn" data-upgrade="1">AXIS 1.2\'ye geç</button>'}<button class="wide" id="logoutBtn">Çıkış yap</button></div>`;
 }
 
-function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; sendBtn.disabled = AXIS.busy || !box.value.trim(); }
+function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; sendBtn.disabled = AXIS.busy || readingFiles > 0 || (!box.value.trim() && !pendingFiles.length); }
+
+// ---------- Dosya ekleri ----------
+const TEXT_EXT = { py: "python", c: "c", h: "c", cpp: "cpp", hpp: "cpp", ino: "cpp", js: "javascript", html: "html", css: "css", json: "json", md: "markdown", txt: "", csv: "csv", xml: "xml", yml: "yaml", yaml: "yaml", log: "", ini: "ini", cfg: "", toml: "toml", java: "java", cs: "csharp", sh: "bash", bat: "bat" };
+const MAX_FILES = 5, MAX_TEXT = 200 * 1024, MAX_PDF = 8 * 1024 * 1024;
+let pendingFiles = [], readingFiles = 0;
+const ext = n => (n.split(".").pop() || "").toLowerCase();
+function readAsDataURL(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(f); }); }
+async function shrinkImage(f) {
+  const url = URL.createObjectURL(f);
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+    const k = Math.min(1, 1568 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85);
+  } finally { URL.revokeObjectURL(url); }
+}
+function toast(msg) { const n = document.createElement("div"); n.className = "err"; n.style.margin = "0 0 8px"; n.textContent = "⚠️ " + msg; $("files").before(n); setTimeout(() => n.remove(), 4000); }
+async function addFiles(list) {
+  for (const f of Array.from(list || [])) {
+    if (pendingFiles.length >= MAX_FILES) { toast(`En fazla ${MAX_FILES} dosya ekleyebilirsin.`); break; }
+    const e = ext(f.name), isImg = /^image\//.test(f.type), isPdf = f.type === "application/pdf" || e === "pdf";
+    if (!isImg && !isPdf && !(e in TEXT_EXT) && !/^text\//.test(f.type)) { toast(`${f.name}: bu dosya türü desteklenmiyor. Kod, metin, görsel veya PDF ekleyebilirsin.`); continue; }
+    const item = { name: f.name || "görsel.jpg", kind: isImg ? "image" : isPdf ? "pdf" : "text", busy: true };
+    pendingFiles.push(item); readingFiles++; renderFiles();
+    try {
+      if (isImg) { const d = await shrinkImage(f); item.media_type = "image/jpeg"; item.data = d.split(",")[1]; item.preview = d; }
+      else if (isPdf) { if (f.size > MAX_PDF) throw new Error("PDF en fazla 8 MB olabilir."); item.data = (await readAsDataURL(f)).split(",")[1]; }
+      else { if (f.size > MAX_TEXT) throw new Error("Metin dosyası en fazla 200 KB olabilir."); item.text = await f.text(); item.lang = TEXT_EXT[e] || ""; }
+      item.busy = false;
+    } catch (err) { pendingFiles = pendingFiles.filter(x => x !== item); toast(`${f.name}: ${err.message || "okunamadı"}`); }
+    readingFiles--; renderFiles();
+  }
+}
+function renderFiles() {
+  $("files").innerHTML = pendingFiles.map((f, i) => `<div class="fchip${f.busy ? " busy" : ""}">${f.preview ? `<img src="${f.preview}" alt="">` : f.kind === "pdf" ? "📕" : "📄"}<span>${esc(f.name)}</span><button aria-label="Kaldır" data-unfile="${i}">×</button></div>`).join("");
+  grow();
+}
 
 async function send(text) {
   const m = (text ?? box.value).trim();
-  if (!m || AXIS.busy) return;
+  const files = text == null ? pendingFiles.filter(f => !f.busy) : [];
+  if ((!m && !files.length) || AXIS.busy || readingFiles) return;
   box.value = ""; box.blur();
-  try { await AXIS.send(m, { onStep: render }); } catch (e) {}
+  if (text == null) { pendingFiles = []; renderFiles(); }
+  try { await AXIS.send(m, { onStep: render, files }); } catch (e) {}
   render();
 }
 
@@ -377,6 +449,15 @@ async function send(text) {
 box.addEventListener("input", grow);
 box.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !matchMedia("(pointer: coarse)").matches) { e.preventDefault(); send(); } });
 sendBtn.addEventListener("click", () => send());
+$("attachBtn").addEventListener("click", () => $("fileIn").click());
+$("fileIn").addEventListener("change", e => { addFiles(e.target.files); e.target.value = ""; });
+$("files").addEventListener("click", e => { const b = e.target.closest("[data-unfile]"); if (b) { pendingFiles.splice(Number(b.dataset.unfile), 1); renderFiles(); } });
+box.addEventListener("paste", e => { const fs = Array.from(e.clipboardData ? e.clipboardData.files : []); if (fs.length) { e.preventDefault(); addFiles(fs); } });
+let dragDepth = 0;
+addEventListener("dragenter", e => { if (e.dataTransfer && Array.from(e.dataTransfer.types).includes("Files")) { dragDepth++; document.body.classList.add("dragging"); } });
+addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+addEventListener("dragover", e => e.preventDefault());
+addEventListener("drop", e => { e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging"); if (AXIS.state.token) addFiles(e.dataTransfer.files); });
 $("newBtn").addEventListener("click", () => { if (!AXIS.busy) { AXIS.reset(); render(); } });
 function openSheet(focusKey) {
   $("nameIn").value = AXIS.state.name;

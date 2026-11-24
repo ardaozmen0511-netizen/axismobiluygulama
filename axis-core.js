@@ -30,6 +30,14 @@
 
   const API = () => String(root.AXIS_API || "").replace(/\/$/, "");
 
+  function randId() {
+    const b = new Uint8Array(16);
+    (root.crypto || globalThis.crypto).getRandomValues(b);
+    return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+  }
+  // Her sohbetin kimliği: "Yeni sohbet" deyince değişir. Sınırsız mod sadece o sohbette geçerli.
+  function convId() { let c = get("axis_conv", ""); if (!/^[a-z0-9]{16,64}$/.test(c)) { c = randId(); set("axis_conv", c); } return c; }
+
   const state = {
     get course() { return get("axis_course", "Python"); },
     set course(c) { if (COURSES.includes(c)) set("axis_course", c); },
@@ -37,6 +45,7 @@
     set name(n) { set("axis_name", String(n || "").trim().slice(0, 40)); },
     get token() { return get("axis_token", ""); },
     get me() { return get("axis_me", null); },     // {email, name, plan, label, limit, used, remaining, pro_until}
+    get unlimited() { return get("axis_unl_conv", "") === convId(); },
     get facts() { return get("axis_facts", []); },
     get notes() { return get("axis_notes", []); },
     get log() { return get("axis_log", []); },   // ekranda görünen: {kind: user|axis|tool|err, text}
@@ -132,7 +141,35 @@
     }
   }
 
-  function reset() { history = []; addLog("reset", ""); }
+  function reset() { history = []; set("axis_conv", randId()); addLog("reset", ""); }
+
+  // Önceki turlardaki görsel/PDF eklerini kısa bir notla değiştirir (istekler küçük kalsın).
+  function stripOldMedia(h) {
+    for (const msg of h) {
+      if (msg.role !== "user" || !Array.isArray(msg.content)) continue;
+      msg.content = msg.content.map(b => (b && (b.type === "image" || b.type === "document"))
+        ? { type: "text", text: `[Önceki mesajda eklenen dosya: ${b._name || (b.type === "image" ? "görsel" : "PDF")}]` } : b);
+    }
+  }
+  // Ekleri Claude'un anlayacağı mesaj içeriğine çevirir.
+  function buildContent(text, files) {
+    if (!files || !files.length) return text;
+    const blocks = [];
+    let body = text;
+    for (const f of files) {
+      let blk = null;
+      if (f.kind === "image") blk = { type: "image", source: { type: "base64", media_type: f.media_type, data: f.data } };
+      else if (f.kind === "pdf") blk = { type: "document", source: { type: "base64", media_type: "application/pdf", data: f.data } };
+      if (blk) { Object.defineProperty(blk, "_name", { value: f.name, enumerable: false }); blocks.push(blk); }
+      else if (f.kind === "text") body += `\n\n📄 ${f.name}:\n\`\`\`${f.lang || ""}\n${f.text}\n\`\`\``;
+    }
+    blocks.push({ type: "text", text: body.trim() || "Eklediğim dosyaya bak." });
+    return blocks;
+  }
+  async function unlock(code) {
+    await call("/api/unlock", { code, conv: convId() }, true);
+    set("axis_unl_conv", convId());
+  }
 
   // ---------- Hesap ----------
   async function call(path, body, auth) {
@@ -173,20 +210,32 @@
     const base = (opts.base || "").replace(/\/$/, "");
     const onStep = opts.onStep || (() => {});
     if (busy) throw new Error("AXIS hâlâ düşünüyor.");
+    const cmd = String(userText).trim().match(/^\/(s[ıi]n[ıi]rs[ıi]z|unlimited)\s+(\S+)\s*$/i);
+    if (cmd) {                                       // gizli komut: kod sohbete/kayda yazılmaz
+      busy = true; onStep();
+      try { await unlock(cmd[2]); addLog("tool", "♾️ Bu sohbet artık sınırsız. Yeni sohbet açınca normal limite dönersin."); }
+      catch (e) { addLog("err", e.status === 403 ? "Kod geçersiz." : e.message); }
+      finally { busy = false; onStep(); }
+      return "";
+    }
+    const files = opts.files || [];
     busy = true;
     if (history === null) history = historyFromLog();
     const start = history.length;
     try {
       dropOldThinking(history);
+      stripOldMedia(history);
       const system = systemPrompt();
-      history.push({ role: "user", content: userText });
-      addLog("user", userText); onStep();
+      const content = buildContent(userText, files);
+      history.push({ role: "user", content });
+      addLog("user", files.length ? `${userText}\n\n📎 ${files.map(f => f.name).join(", ")}`.trim() : userText); onStep();
       let resp = null;
       for (let step = 0; step < 10; step++) {
         const me = state.me;
         const web = webOk && me && me.web;
-        const body = { model: "axis", system, messages: history, tools: TOOLS.concat(web ? [WEB_TOOL] : []), max_tokens: 2048 };
-        const headers = { "content-type": "application/json", "x-api-key": state.token, "anthropic-version": "2023-06-01" };
+        const unl = state.unlimited;
+        const body = { model: "axis", system, messages: history, tools: TOOLS.concat(web || unl ? [WEB_TOOL] : []), max_tokens: unl ? 8192 : 2048 };
+        const headers = { "content-type": "application/json", "x-api-key": state.token, "anthropic-version": "2023-06-01", "x-axis-conv": convId() };
         const r = await fetch((base || API()) + "/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
         let data = null;
         try { data = await r.json(); } catch (e) {}
@@ -231,5 +280,5 @@
     }
   }
 
-  root.AXIS = { COURSES, state, send, reset, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
+  root.AXIS = { COURSES, state, send, reset, unlock, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
 })(typeof window !== "undefined" ? window : globalThis);
