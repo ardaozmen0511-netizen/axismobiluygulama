@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.alreonx.axis",
+    "sha256_cert_fingerprints": ["50:29:2A:36:3A:68:7A:5F:7E:BC:30:97:1B:F2:00:4A:EA:4E:42:EB:45:3B:54:13:BD:49:C0:50:19:40:88:A8"]
+  }
+}]
