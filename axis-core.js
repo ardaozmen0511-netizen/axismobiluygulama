@@ -237,6 +237,19 @@
     catch (e) { if (e.status === 401) { S.removeItem("axis_token"); S.removeItem("axis_me"); } throw e; }
   }
   const plans = () => call("/api/plans");
+  async function google(credential, terms) { saveSession(await call("/api/google", { credential, terms: !!terms })); }
+  const payment = (sender, contract) => call("/api/payment", { sender, contract: !!contract }, true);
+  async function deleteAccount(confirm) {
+    await call("/api/account/delete", { confirm }, true);
+    ["axis_token", "axis_me", "axis_facts", "axis_notes", "axis_log", "axis_name", "axis_unl_conv"].forEach(k => S.removeItem(k));
+    history = [];
+  }
+  async function exportData() {
+    const r = await fetch(API() + "/api/me/export", { headers: { "x-api-key": state.token } });
+    if (!r.ok) throw new Error("Veriler indirilemedi.");
+    const server = await r.json();
+    return Object.assign(server, { cihazdaki_veriler: { ad: state.name, notlar: state.facts, calisilacaklar: state.notes, sohbet: state.log } });
+  }
 
   // ---------- Ana döngü ----------
   let busy = false;
@@ -315,5 +328,5 @@
     }
   }
 
-  root.AXIS = { COURSES, AI_MODE, state, send, reset, unlock, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
+  root.AXIS = { COURSES, AI_MODE, state, send, reset, unlock, google, payment, deleteAccount, exportData, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
 })(typeof window !== "undefined" ? window : globalThis);

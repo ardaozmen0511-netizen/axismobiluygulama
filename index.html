@@ -197,6 +197,29 @@
   .art img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 14px; border: 1px solid var(--line); background: #fff; }
   .art figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--dim); }
   .art figcaption button { font-size: 12.5px; color: var(--text); border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 3px 9px; }
+  /* Yeni giriş ekranı */
+  .gwrap { min-height: 44px; display: flex; justify-content: center; margin-bottom: 4px; }
+  .gwrap:empty { display: none; }
+  .or { display: flex; align-items: center; gap: 10px; color: #5f6a90; font-size: 12.5px; margin: 14px 0 4px; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .or.hide { display: none; }
+  .pw { position: relative; }
+  .pw input { padding-right: 70px !important; }
+  .pw button { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--dim); padding: 6px 8px; }
+  .auth a, .legal a { color: var(--c); }
+  .aok { color: #8ff0b4; font-size: 14px; margin-top: 10px; }
+  /* Ödeme */
+  .paybox { border: 1px solid var(--line); border-radius: 14px; background: var(--panel2); padding: 4px 12px; margin-top: 4px; }
+  .prow { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #161b36; font-size: 14px; }
+  .prow:last-child { border-bottom: 0; }
+  .prow span { color: var(--dim); width: 78px; flex: none; font-size: 13px; }
+  .prow b { flex: 1; font-weight: 600; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; }
+  .prow button { font-size: 12px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 3px 9px; flex: none; }
+  .upbox label.check { margin-top: 12px; } .upbox a { color: var(--c); }
+  .upbox input[type=text] { width: 100%; margin-top: 6px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--text); font: inherit; font-size: 16px; }
+  .steps { margin: 10px 0 0 18px; font-size: 13.5px; color: var(--dim); display: grid; gap: 3px; }
+  .danger-zone { margin-top: 10px; padding: 10px; border: 1px solid rgba(255,107,107,.35); border-radius: 12px; font-size: 13px; color: #ffb3b3; }
+  .danger-zone input { width: 100%; margin: 8px 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; color: var(--text); font: inherit; font-size: 16px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -246,7 +269,7 @@
     <h3>Çalışılacaklar</h3><div id="notes"></div>
     <button class="wide" id="resetBtn">Sohbeti temizle</button>
   </div>
-  <div class="sfoot"><img src="/logo_alreonx.png" alt="AlreonX"><small>Notların ve sohbetin bu telefonda saklanır. AXIS bir yapay zekâdır, hata yapabilir.</small></div>
+  <div class="sfoot"><img src="/logo_alreonx.png" alt="AlreonX"><small>Notların ve sohbetin bu cihazda saklanır. AXIS bir yapay zekâdır, hata yapabilir.<br><a href="/gizlilik.html" target="_blank" rel="noopener" style="color:#5f6a90">Gizlilik</a> · <a href="/kosullar.html" target="_blank" rel="noopener" style="color:#5f6a90">Koşullar</a> · <a href="/mesafeli.html" target="_blank" rel="noopener" style="color:#5f6a90">Mesafeli satış</a></small></div>
 </section>
 
 <section id="up" aria-label="AXIS 1.2">
@@ -257,11 +280,9 @@
       <div class="tier"><h3>AXIS 1.0</h3><div class="price">Ücretsiz</div><ul id="tFree"></ul></div>
       <div class="tier pro"><h3>AXIS 1.2</h3><div class="price" id="tPrice"></div><ul id="tPro"></ul></div>
     </div>
-    <div class="howpay"><b>Nasıl alırım?</b><span id="payInfo">Yükleniyor…</span>
-
-Ödeme açıklamasına AXIS e-postanı yaz: <b style="display:inline" id="payEmail"></b>
-Ödemen onaylanınca 1.2 hesabına açılır, uygulamayı yeniden açman yeterli.</div>
-    <div class="row2" style="margin-top:14px"><button class="wide" id="upClose">Kapat</button><button class="wide gbtn" id="upRefresh">Ödedim, kontrol et</button></div>
+    <div id="payArea"><div class="howpay" id="payInfo">Yükleniyor…</div></div>
+    <div class="aerr" id="payErr" role="alert"></div>
+    <div class="row2" style="margin-top:12px"><button class="wide" id="upClose">Kapat</button><button class="wide" id="upRefresh">Onaylandı mı?</button></div>
   </div>
 </section>
 
@@ -269,6 +290,8 @@
   <div class="auth">
     <img class="wlogo" src="/logo_axis.png" alt="AXIS — AlreonX Intelligent System">
     <p class="lead">AlreonX'in yapay zekâ öğretmen yardımcısı</p>
+    <div class="gwrap" id="gsi"></div>
+    <div class="or hide" id="orLine">ya da e-postayla</div>
     <div class="tabs" role="tablist"><button id="tabReg" class="on" type="button">Hesap aç</button><button id="tabLogin" type="button">Giriş yap</button></div>
     <form id="authForm" novalidate>
       <div id="regOnly">
@@ -278,20 +301,14 @@
       <label for="aEmail">E-posta</label>
       <input id="aEmail" type="email" autocomplete="email" inputmode="email" placeholder="ornek@mail.com" required>
       <label for="aPass">Şifre</label>
-      <input id="aPass" type="password" autocomplete="new-password" placeholder="En az 8 karakter" required minlength="8">
+      <div class="pw"><input id="aPass" type="password" autocomplete="new-password" placeholder="En az 8 karakter" required minlength="8"><button type="button" id="pwToggle" aria-label="Şifreyi göster">Göster</button></div>
       <div id="regChecks">
-        <label class="check"><input type="checkbox" id="aTerms"><span>Aşağıdaki bilgilendirmeyi okudum. AXIS'in bir yapay zekâ olduğunu ve hata yapabileceğini biliyorum.</span></label>
-        <label class="check"><input type="checkbox" id="aMinor"><span>18 yaşından küçüğüm ve AXIS'i velimin izniyle kullanıyorum.</span></label>
-        <details class="info"><summary>Bilgilendirme ve gizlilik</summary>
-          <p>Hesabın için adın, e-postan, şifrenin şifrelenmiş hâli ve günlük mesaj sayın AlreonX'in sunucusunda saklanır. Sohbetlerin ve AXIS'in senin hakkındaki notları sadece bu telefonda durur.</p>
-          <p>AXIS'e yazdığın mesajlar cevap üretilmesi için Anthropic'in Claude yapay zekâsına gönderilir. Adres, telefon, şifre gibi kişisel bilgilerini AXIS'e yazma.</p>
-          <p>AXIS 1.0 ücretsizdir, günlük mesaj sınırı vardır. Hesabını silmek için alreonxyazilim@outlook.com adresine yaz.</p>
-        </details>
+        <label class="check"><input type="checkbox" id="aTerms"><span><a href="/kosullar.html" target="_blank" rel="noopener">Kullanım Koşulları</a>'nı kabul ediyorum, <a href="/gizlilik.html" target="_blank" rel="noopener">Gizlilik ve KVKK Aydınlatma Metni</a>'ni okudum.</span></label>
       </div>
       <button class="go" id="authGo" type="submit">Hesap aç</button>
       <div class="aerr" id="authErr" role="alert"></div>
     </form>
-    <p class="fine">AXIS 1.0 ücretsiz: günde <span class="fLimit">15</span> mesaj.<br>AlreonX Yazılım · Kodu yaz, devreyi kur.</p>
+    <p class="fine">AXIS bir yapay zekâdır, hata yapabilir. Önemli bilgileri kontrol et.<br>AXIS 1.0 ücretsiz: günde <span class="fLimit">15</span> mesaj · <a href="/gizlilik.html" target="_blank" rel="noopener">Gizlilik</a> · <a href="/kosullar.html" target="_blank" rel="noopener">Koşullar</a></p>
   </div>
 </section>
 
@@ -403,7 +420,10 @@ function renderPlan() {
     <div class="who">${esc(me.email)}</div>
     <div class="meter"><i style="width:${Math.min(100, me.used / me.limit * 100)}%"></i></div>
     <div class="who">Bugün ${me.used}/${me.limit} mesaj kullandın. Her gece yenilenir.</div>
-    <div class="row2">${pro ? "" : '<button class="wide gbtn" data-upgrade="1">AXIS 1.2\'ye geç</button>'}<button class="wide" id="logoutBtn">Çıkış yap</button></div>`;
+    <div class="row2">${pro ? "" : '<button class="wide gbtn" data-upgrade="1">AXIS 1.2\'ye geç</button>'}<button class="wide" id="logoutBtn">Çıkış yap</button></div>
+    <div class="row2"><button class="wide" id="exportBtn">Verilerimi indir</button><button class="wide" id="delOpen">Hesabımı sil</button></div>
+    <div class="danger-zone" id="delZone" hidden>Hesabın, kullanım kayıtların ve bu cihazdaki sohbetlerin kalıcı olarak silinir. Geri alınamaz. Onaylamak için <b>SİL</b> yaz:
+      <input id="delIn" autocomplete="off" placeholder="SİL"><button class="wide" id="delGo" style="border-color:rgba(255,107,107,.5);color:#ffb3b3">Hesabımı kalıcı olarak sil</button></div>`;
 }
 
 function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; sendBtn.disabled = AXIS.busy || readingFiles > 0 || (!box.value.trim() && !pendingFiles.length); }
@@ -495,6 +515,22 @@ $("resetBtn").addEventListener("click", () => { if (!AXIS.busy) { AXIS.reset(); 
 
 document.body.addEventListener("click", async e => {
   if (e.target.id === "logoutBtn") { await AXIS.logout(); closeSheet(); render(); return; }
+  if (e.target.id === "delOpen") { $("delZone").hidden = !$("delZone").hidden; return; }
+  if (e.target.id === "delGo") {
+    try { await AXIS.deleteAccount($("delIn").value); closeSheet(); render(); }
+    catch (err) { e.target.textContent = err.message; setTimeout(() => e.target.textContent = "Hesabımı kalıcı olarak sil", 2500); }
+    return;
+  }
+  if (e.target.id === "exportBtn") {
+    try {
+      const data = await AXIS.exportData();
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      a.download = "axis-verilerim.json"; document.body.appendChild(a); a.click(); a.remove();
+    } catch (err) { e.target.textContent = err.message; }
+    return;
+  }
+  const cp = e.target.closest("[data-copy]");
+  if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy); cp.textContent = "Kopyalandı ✓"; } catch (err) { cp.textContent = "Kopyalanamadı"; } setTimeout(() => cp.textContent = "Kopyala", 1500); return; }
   const dl = e.target.closest("[data-dl]");
   if (dl) { const it = AXIS.state.log.find(x => String(x.t) === dl.dataset.dl && x.svg); if (it) downloadArt(it); return; }
   const t = e.target.closest("[data-q],[data-fill],[data-course],[data-forget],[data-done],[data-install],[data-upgrade],[data-relogin],.codecopy");
@@ -524,39 +560,94 @@ function setMode(reg) {
   $("tabReg").classList.toggle("on", reg); $("tabLogin").classList.toggle("on", !reg);
   $("regOnly").hidden = !reg; $("regChecks").hidden = !reg;
   $("authGo").textContent = reg ? "Hesap aç" : "Giriş yap";
-  $("aPass").autocomplete = reg ? "new-password" : "current-password";
+  $("aPass").setAttribute("autocomplete", reg ? "new-password" : "current-password");
+  $("aPass").placeholder = reg ? "En az 8 karakter" : "Şifren";
   $("authErr").textContent = "";
 }
 $("tabReg").addEventListener("click", () => setMode(true));
 $("tabLogin").addEventListener("click", () => setMode(false));
+$("pwToggle").addEventListener("click", () => {
+  const show = $("aPass").type === "password";
+  $("aPass").type = show ? "text" : "password"; $("pwToggle").textContent = show ? "Gizle" : "Göster";
+});
 $("authForm").addEventListener("submit", async e => {
   e.preventDefault();
   const email = $("aEmail").value.trim(), password = $("aPass").value;
-  if (regMode && !$("aTerms").checked) { $("authErr").textContent = "Devam etmek için bilgilendirmeyi onayla."; return; }
-  if (password.length < 8) { $("authErr").textContent = "Şifre en az 8 karakter olmalı."; return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { $("authErr").textContent = "Geçerli bir e-posta adresi yaz."; return; }
+  if (regMode && password.length < 8) { $("authErr").textContent = "Şifre en az 8 karakter olmalı."; return; }
+  if (!password) { $("authErr").textContent = "Şifreni yaz."; return; }
+  if (regMode && !$("aTerms").checked) { $("authErr").textContent = "Devam etmek için kullanım koşullarını kabul et."; return; }
   $("authGo").disabled = true; $("authErr").textContent = "";
   try {
-    if (regMode) await AXIS.register({ email, password, name: $("aName").value.trim(), terms: true, minor: $("aMinor").checked });
+    if (regMode) await AXIS.register({ email, password, name: $("aName").value.trim(), terms: true });
     else await AXIS.login(email, password);
     $("aPass").value = "";
     render();
-  } catch (err) { $("authErr").textContent = err.message; }
-  finally { $("authGo").disabled = false; }
+  } catch (err) {
+    $("authErr").textContent = err.message;
+    if (regMode && err.status === 409) setMode(false);
+  } finally { $("authGo").disabled = false; }
 });
 
+// Google ile giriş (sunucuda GOOGLE_CLIENT_ID ayarlıysa görünür)
+function setupGoogle(clientId) {
+  if (!clientId || window.__gsiReady) return;
+  window.__gsiReady = true;
+  const sc = document.createElement("script");
+  sc.src = "https://accounts.google.com/gsi/client"; sc.async = true;
+  sc.onload = () => {
+    google.accounts.id.initialize({ client_id: clientId, ux_mode: "popup", callback: async r => {
+      $("authErr").textContent = "";
+      try { await AXIS.google(r.credential, $("aTerms").checked); render(); }
+      catch (err) {
+        if (err.code === "terms") { setMode(true); $("authErr").textContent = "İlk girişte kullanım koşullarını kabul etmen gerekiyor: kutuyu işaretle, sonra tekrar Google ile devam et."; }
+        else $("authErr").textContent = err.message;
+      }
+    } });
+    google.accounts.id.renderButton($("gsi"), { theme: "filled_black", size: "large", shape: "pill", text: "continue_with", locale: "tr", width: Math.min(360, $("gsi").clientWidth || 320) });
+    $("orLine").classList.remove("hide");
+  };
+  document.head.appendChild(sc);
+}
+
 // ---------- AXIS 1.2 ----------
+function payHtml(p, email) {
+  const row = (k, v, copy) => `<div class="prow"><span>${k}</span><b>${esc(v)}</b>${copy ? `<button data-copy="${esc(copy)}">Kopyala</button>` : ""}</div>`;
+  return `<div class="paybox">
+      ${row("IBAN", p.iban, p.iban.replace(/\s+/g, ""))}
+      ${row("Alıcı", p.name, p.name)}
+      ${p.bank ? row("Banka", p.bank) : ""}
+      ${row("Tutar", p.amount + " TL", p.amount)}
+      ${row("Açıklama", "AXIS 1.2 " + email, "AXIS 1.2 " + email)}
+    </div>
+    <ol class="steps"><li>Banka uygulamandan bu IBAN'a <b>${esc(p.amount)} TL</b> gönder.</li><li>Açıklamaya yukarıdaki yazıyı aynen yaz.</li><li>Aşağıyı doldurup <b>Ödemeyi yaptım</b>'a bas. Kontrol edilince 1.2 açılır.</li></ol>
+    <label class="check"><input type="checkbox" id="payContract"><span><a href="/mesafeli.html" target="_blank" rel="noopener">Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi</a>'ni okudum, onaylıyorum. Hizmetin onaydan hemen sonra başlamasını istiyorum.</span></label>
+    <input type="text" id="paySender" maxlength="80" placeholder="Parayı gönderen hesabın sahibinin adı soyadı">
+    <button class="wide gbtn" id="payGo" style="margin-top:10px">Ödemeyi yaptım, bildir</button>`;
+}
 async function openUpgrade() {
   document.body.classList.add("upgrade");
-  $("payEmail").textContent = (AXIS.state.me && AXIS.state.me.email) || "";
+  $("payErr").textContent = "";
   try {
     planInfo = planInfo || await AXIS.plans();
     const f = planInfo.plans.free, p = planInfo.plans.pro;
     $("tPrice").textContent = planInfo.price;
     $("tFree").innerHTML = `<li>Günde ${f.daily} mesaj</li><li>Kısa cevaplar</li><li>Tüm kurslar</li>`;
     $("tPro").innerHTML = `<li>Günde ${p.daily} mesaj</li><li>Daha uzun cevaplar</li><li>İnternetten güncel bilgi</li><li>Tüm kurslar</li>`;
-    $("payInfo").textContent = planInfo.payment_info;
-  } catch (e) { $("payInfo").textContent = e.message; }
+    $("payArea").innerHTML = planInfo.pay ? payHtml(planInfo.pay, (AXIS.state.me && AXIS.state.me.email) || "")
+      : `<div class="howpay">${esc(planInfo.payment_info)}</div>`;
+  } catch (e) { $("payArea").innerHTML = `<div class="howpay">${esc(e.message)}</div>`; }
 }
+$("payArea").addEventListener("click", async e => {
+  if (e.target.id !== "payGo") return;
+  $("payErr").textContent = "";
+  const contract = $("payContract").checked, sender = $("paySender").value.trim();
+  if (!contract) { $("payErr").textContent = "Önce sözleşme kutusunu işaretle."; return; }
+  if (sender.length < 3) { $("payErr").textContent = "Parayı gönderen hesabın sahibinin adını yaz."; return; }
+  e.target.disabled = true;
+  try { await AXIS.payment(sender, contract); $("payArea").innerHTML = '<div class="aok">✓ Bildirimin alındı. Ödeme kontrol edilince AXIS 1.2 hesabına açılacak. "Onaylandı mı?" ile bakabilirsin.</div>'; }
+  catch (err) { $("payErr").textContent = err.message; e.target.disabled = false; }
+});
 $("planBtn").addEventListener("click", () => { const me = AXIS.state.me; if (me && me.plan === "pro") openSheet(false); else openUpgrade(); });
 $("upClose").addEventListener("click", () => document.body.classList.remove("upgrade"));
 $("upRefresh").addEventListener("click", async () => {
@@ -564,11 +655,11 @@ $("upRefresh").addEventListener("click", async () => {
     const me = await AXIS.refreshMe();
     render();
     if (me && me.plan === "pro") { document.body.classList.remove("upgrade"); }
-    else $("payInfo").textContent = "Henüz onaylanmadı. Ödemen kontrol edilince 1.2 açılacak. " + (planInfo ? planInfo.payment_info : "");
-  } catch (e) { $("payInfo").textContent = e.message; }
+    else $("payErr").textContent = "Henüz onaylanmadı. Ödeme kontrol edilince 1.2 açılacak.";
+  } catch (e) { $("payErr").textContent = e.message; }
 });
 
-AXIS.plans().then(p => { planInfo = p; document.querySelectorAll(".fLimit").forEach(x => x.textContent = p.plans.free.daily); }).catch(() => {});
+AXIS.plans().then(p => { planInfo = p; document.querySelectorAll(".fLimit").forEach(x => x.textContent = p.plans.free.daily); setupGoogle(p.google_client_id); }).catch(() => {});
 if (AXIS.state.token) AXIS.refreshMe().then(render).catch(render);
 render();
 </script>
