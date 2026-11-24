@@ -5,7 +5,8 @@
 (function (root) {
   "use strict";
 
-  const COURSES = ["Python", "C", "C++", "Arduino/ESP32"];
+  const COURSES = ["Python", "C", "C++", "Arduino/ESP32", "Yapay Zeka"];
+  const AI_MODE = "Yapay Zeka";        // ders dışı, serbest sohbet + çizim
   const DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
   // ---------- Telefonda saklama ----------
@@ -51,9 +52,12 @@
     get log() { return get("axis_log", []); },   // ekranda görünen: {kind: user|axis|tool|err, text}
   };
 
-  function addLog(kind, text, code) {
+  function addLog(kind, text, code, svg) {
     const log = state.log;
-    log.push(code ? { kind, text, code, t: Date.now() } : { kind, text, t: Date.now() });
+    const e = { kind, text, t: Date.now() };
+    if (code) e.code = code;
+    if (svg) e.svg = svg;
+    log.push(e);
     set("axis_log", log.slice(-200));
   }
 
@@ -68,6 +72,8 @@
     { name: "complete_note", description: "Yapılan veya artık gerekmeyen bir notu siler (notun içinden bir parça yaz).",
       input_schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"] } },
   ];
+  const DRAW_TOOL = { name: "draw_image", description: "Kullanıcı bir resim, çizim, logo, ikon, poster, diyagram veya illüstrasyon istediğinde kullan. Resmi tam ve geçerli bir SVG olarak çiz: <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"> ile başlasın. Renkli, dolgulu şekiller, gradyanlar ve katmanlarla özenli çiz; metin gerekiyorsa kısa tut. <script>, dış bağlantı ve resim dosyası kullanma. SVG'yi sohbete yazma, sadece bu araçla gönder.",
+    input_schema: { type: "object", properties: { title: { type: "string", description: "Resmin kısa adı" }, svg: { type: "string", description: "Tam SVG kodu" } }, required: ["title", "svg"] } };
   const WEB_TOOL = { type: "web_search_20250305", name: "web_search", max_uses: 3 };
   let webOk = true;
 
@@ -86,6 +92,14 @@
       n.push({ text: String(text), t: `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}` });
       set("axis_notes", n); return "Not alındı.";
     },
+    draw_image({ title, svg }) {
+      const code = String(svg || "").trim();
+      if (!/^<svg[\s>]/i.test(code) || !/<\/svg>\s*$/i.test(code)) return "Hata: Geçerli bir SVG değil. <svg ...> ile başlayıp </svg> ile biten tam kod gönder.";
+      if (code.length > 80000) return "Hata: SVG çok uzun, daha sade çiz.";
+      if (/<script|on\w+\s*=|javascript:|<foreignObject|xlink:href\s*=\s*["']https?:|href\s*=\s*["']https?:/i.test(code)) return "Hata: SVG'de script, olay ya da dış bağlantı olamaz.";
+      addLog("image", String(title || "Resim").slice(0, 80), undefined, code);
+      return "Resim kullanıcıya gösterildi.";
+    },
     complete_note({ text }) {
       const n = state.notes, k = n.filter(x => !x.text.toLowerCase().includes(String(text).toLowerCase()));
       set("axis_notes", k); return k.length < n.length ? "Not silindi." : "Böyle bir not bulunamadı.";
@@ -96,7 +110,22 @@
   function noteDone(text) { set("axis_notes", state.notes.filter(n => n.text !== text)); }
 
   // ---------- Talimat ----------
+  function aiPrompt() {
+    const now = new Date(), name = state.name || "kullanıcı";
+    const facts = state.facts.map(f => "- " + f).join("\n") || "(henüz bir şey bilmiyorsun)";
+    return [
+      "Sen AXIS'sin (AlreonX Intelligent System), AlreonX'in yapay zekâ asistanı. Şu an YAPAY ZEKA modundasın: kullanıcıyla her konuda serbestçe sohbet edebilirsin (bilim, tarih, oyun, film, günlük hayat, ödev, fikir, yaratıcı yazı...). Ders kuralları bu modda geçerli değil; doğrudan, samimi ve yardımsever cevap ver. Türkçe konuş.",
+      "Kullanıcı seninle TELEFONDAN veya bilgisayardan yazışıyor: cevaplarını okunaklı, kısa paragraflarla ver.",
+      "RESİM: Kullanıcı bir resim, çizim, logo, poster, ikon veya illüstrasyon isterse 'draw_image' aracıyla SVG olarak çiz. Fotoğraf gerçekliğinde resim yapamadığını, çizim/illüstrasyon tarzında yaptığını gerekirse kısaca söyle. Çizdikten sonra 1-2 cümleyle ne çizdiğini anlat ve istersen değiştirebileceğini söyle.",
+      (state.me && state.me.web) || state.unlimited ? "Güncel bilgi gerekirse internette arama yapabilirsin." : "İnternette arama yapamazsın; bilmediğin güncel bir bilgi sorulursa bunu açıkça söyle.",
+      "Kullanıcı hakkında kalıcı ve işe yarar bir şey öğrenirsen 'remember' ile kaydedebilirsin.",
+      `Şu an: ${DAYS[now.getDay()]}, ${now.toLocaleString("tr-TR")}`,
+      `Kullanıcı (${name}) hakkında bildiklerin:\n${facts}`,
+    ].join("\n\n");
+  }
+
   function systemPrompt() {
+    if (state.course === AI_MODE) return aiPrompt();
     const now = new Date(), course = state.course, name = state.name || "öğrenci";
     const facts = state.facts.map(f => "- " + f).join("\n") || "(henüz bir şey bilmiyorsun)";
     const notes = state.notes.map(n => `- [${n.t}] ${n.text}`).join("\n") || "(yok)";
@@ -146,6 +175,11 @@
   // Önceki turlardaki görsel/PDF eklerini kısa bir notla değiştirir (istekler küçük kalsın).
   function stripOldMedia(h) {
     for (const msg of h) {
+      if (msg.role === "assistant" && Array.isArray(msg.content)) {
+        msg.content = msg.content.map(b => (b && b.type === "tool_use" && b.name === "draw_image" && b.input && b.input.svg)
+          ? Object.assign({}, b, { input: { title: b.input.title, svg: "(önceki çizim, kısaltıldı)" } }) : b);
+        continue;
+      }
       if (msg.role !== "user" || !Array.isArray(msg.content)) continue;
       msg.content = msg.content.map(b => (b && (b.type === "image" || b.type === "document"))
         ? { type: "text", text: `[Önceki mesajda eklenen dosya: ${b._name || (b.type === "image" ? "görsel" : "PDF")}]` } : b);
@@ -234,7 +268,8 @@
         const me = state.me;
         const web = webOk && me && me.web;
         const unl = state.unlimited;
-        const body = { model: "axis", system, messages: history, tools: TOOLS.concat(web || unl ? [WEB_TOOL] : []), max_tokens: unl ? 8192 : 2048 };
+        const ai = state.course === AI_MODE;
+        const body = { model: "axis", system, messages: history, tools: TOOLS.concat(ai ? [DRAW_TOOL] : [], web || unl ? [WEB_TOOL] : []), max_tokens: unl ? 8192 : ai ? 4096 : 2048 };
         const headers = { "content-type": "application/json", "x-api-key": state.token, "anthropic-version": "2023-06-01", "x-axis-conv": convId() };
         const r = await fetch((base || API()) + "/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
         let data = null;
@@ -260,8 +295,8 @@
           if (b.type !== "tool_use") continue;
           let out;
           try { out = FUNCS[b.name] ? FUNCS[b.name](b.input || {}) : "Bilinmeyen araç."; } catch (e) { out = "Hata: " + e.message; }
-          const label = { remember: "🧠 Hafızaya kaydetti: ", forget: "🧹 Unuttu: ", add_note: "📝 Not aldı: ", complete_note: "✅ Notu tamamladı: " }[b.name] || "• ";
-          addLog("tool", label + ((b.input && (b.input.fact || b.input.text)) || ""));
+          const label = { remember: "🧠 Hafızaya kaydetti: ", forget: "🧹 Unuttu: ", add_note: "📝 Not aldı: ", complete_note: "✅ Notu tamamladı: " }[b.name];
+          if (label) addLog("tool", label + ((b.input && (b.input.fact || b.input.text)) || ""));
           results.push({ type: "tool_result", tool_use_id: b.id, content: out });
           onStep();
         }
@@ -280,5 +315,5 @@
     }
   }
 
-  root.AXIS = { COURSES, state, send, reset, unlock, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
+  root.AXIS = { COURSES, AI_MODE, state, send, reset, unlock, forgetExact, noteDone, deviceId, register, login, logout, refreshMe, plans, _systemPrompt: systemPrompt, _historyFromLog: historyFromLog, get busy() { return busy; } };
 })(typeof window !== "undefined" ? window : globalThis);

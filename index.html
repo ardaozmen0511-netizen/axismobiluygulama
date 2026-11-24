@@ -190,6 +190,13 @@
     .chips { grid-template-columns: repeat(4, 1fr); }
     #sheet, .upbox { max-width: 560px; margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
   }
+  /* Yapay Zeka modu ve çizimler */
+  .course.ai { border-color: #3a2f8a; }
+  .course.ai.on { background: linear-gradient(90deg, #7b2ff0, #c13fd6); }
+  .art { margin: -4px 0 14px 36px; max-width: 420px; }
+  .art img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 14px; border: 1px solid var(--line); background: #fff; }
+  .art figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--dim); }
+  .art figcaption button { font-size: 12.5px; color: var(--text); border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 3px 9px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -218,7 +225,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg>
     </button>
     <input type="file" id="fileIn" multiple hidden accept=".py,.c,.cpp,.h,.hpp,.ino,.txt,.md,.json,.csv,.js,.html,.css,.xml,.yml,.yaml,.log,.ini,.cfg,.toml,.java,.cs,.sh,.bat,image/*,application/pdf">
-    <textarea id="msg" rows="1" placeholder="Sorunu yaz, kodunu yapıştır ya da dosya ekle…" enterkeyhint="send"></textarea>
+    <textarea id="msg" rows="1" placeholder="Bir şey yaz, kod yapıştır ya da dosya ekle…" enterkeyhint="send"></textarea>
     <button id="send" aria-label="Gönder" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
     </button>
@@ -328,9 +335,12 @@ const SUGGEST = {
   "Python": [["fill", "Bu hata ne demek?", "Hata mesajını yapıştır", "Bu hatayı alıyorum:\n"], ["fill", "Kodumu kontrol et", "Önce ipucu, sonra çözüm", "Kodum çalışmıyor, kontrol eder misin?\n```python\n\n```"], ["q", "for döngüsünü anlat", "Basit örneklerle"], ["q", "Listeler nasıl çalışır?", "append, index, dilimleme"]],
   "C": [["q", "Pointer nedir?", "Adım adım anlatım"], ["q", "Segmentation fault neden olur?", "En sık sebepler"], ["fill", "Kodumu kontrol et", "Önce ipucu, sonra çözüm", "Kodum çalışmıyor, kontrol eder misin?\n```c\n\n```"], ["q", "scanf ile girdi alma", "Sık yapılan hatalar"]],
   "C++": [["q", "Class ve object farkı", "Gerçek hayattan örnekle"], ["q", "vector nasıl kullanılır?", "push_back, size, döngü"], ["fill", "Kodumu kontrol et", "Önce ipucu, sonra çözüm", "Kodum çalışmıyor, kontrol eder misin?\n```cpp\n\n```"], ["q", "Referans ve pointer farkı", "Ne zaman hangisi?"]],
+  "Yapay Zeka": [["q", "Bana bir kedi çiz", "Resim üretir"], ["q", "Bugün ne yapsam?", "Sohbet edelim"], ["q", "Uzay hakkında ilginç bir bilgi ver", "Rastgele konu"], ["q", "AlreonX için bir logo fikri çiz", "Tasarım"]],
   "Arduino/ESP32": [["q", "LED yakıp söndürme devresi", "Bağlantı + kod"], ["q", "ESP32 WiFi'ye bağlanmıyor", "Adım adım kontrol"], ["q", "Sensörden değer okuma", "analogRead ve Serial"], ["fill", "Kodumu kontrol et", "Önce ipucu, sonra çözüm", "Kodum çalışmıyor, kontrol eder misin?\n```cpp\n\n```"]],
 };
 const QUICK = ["💡 Bir ipucu daha", "✅ Çözümü göster", "🐢 Daha basit anlat", "🏋️ Bana bir alıştırma ver"];
+const QUICK_AI = ["🎨 Bir resim çiz", "🔁 Başka türlü anlat", "😂 Biraz espri yap", "📌 Kısaca özetle"];
+const svgSrc = svg => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 
 // ---------- Çizim ----------
 const inner = $("inner"), chat = $("chat"), box = $("msg"), sendBtn = $("send");
@@ -348,7 +358,7 @@ function render() {
   if (!items.length) {
     const name = st.name ? " " + esc(st.name) : "";
     h = `<div id="welcome"><img class="wlogo" src="/logo_axis.png" alt="AXIS — AlreonX Intelligent System">
-      <h1>Merhaba${name} 👋</h1><p>Ben AXIS, AlreonX öğretmen yardımcın. <b>${esc(course)}</b> dersinde nerede takıldın?</p>
+      <h1>Merhaba${name} 👋</h1><p>${course === AXIS.AI_MODE ? "Ben AXIS. Aklına ne gelirse konuşabiliriz, istersen bir şey de çizerim." : `Ben AXIS, AlreonX öğretmen yardımcın. <b>${esc(course)}</b> dersinde nerede takıldın?`}</p>
       <div class="chips">${SUGGEST[course].map(([k, a, b, f]) => `<button class="chip" ${k === "fill" ? `data-fill="${esc(f)}"` : `data-q="${esc(a)}"`}><b>${esc(a)}</b><small>${esc(b)}</small></button>`).join("")}</div>
       <div class="install${deferredInstall ? " show" : ""}" id="install"><span>AXIS'i ana ekrana ekle, uygulama gibi aç.</span><button data-install="1">Yükle</button></div></div>`;
   }
@@ -356,15 +366,16 @@ function render() {
     if (e.kind === "user") h += `<div class="msg user"><div class="bubble">${md(e.text)}</div></div>`;
     else if (e.kind === "axis") h += `<div class="msg axis"><div class="avatar"></div><div class="bubble">${md(e.text)}</div></div>`;
     else if (e.kind === "tool") h += `<div class="tool"><span>${esc(e.text)}</span></div>`;
+    else if (e.kind === "image" && e.svg) h += `<figure class="art"><img src="${svgSrc(e.svg)}" alt="${esc(e.text)}"><figcaption><span>🎨 ${esc(e.text)}</span><button data-dl="${esc(String(e.t))}">İndir</button></figcaption></figure>`;
     else if (e.kind === "err") h += `<div class="err">⚠️ ${esc(e.text)}${e.code === "limit" && !(st.me && st.me.plan === "pro") ? '<br><button class="cta" data-upgrade="1">AXIS 1.2\'ye bak</button>' : e.code === "login" ? '<br><button class="cta" data-relogin="1">Tekrar giriş yap</button>' : ""}</div>`;
   }
   const last = items[items.length - 1];
   if (AXIS.busy) h += `<div class="msg axis typing"><div class="avatar"></div><div class="bubble"><div class="dots"><i></i><i></i><i></i></div>Düşünüyor…</div></div>`;
-  else if (last && last.kind === "axis") h += `<div class="quick">${QUICK.map(q => `<button class="qbtn" data-q="${q.slice(2).trim()}">${q}</button>`).join("")}</div>`;
+  else if (last && last.kind === "axis") h += `<div class="quick">${(course === AXIS.AI_MODE ? QUICK_AI : QUICK).map(q => `<button class="qbtn" data-q="${q.slice(2).trim()}">${q}</button>`).join("")}</div>`;
   inner.innerHTML = h;
   chat.scrollTop = chat.scrollHeight;
 
-  $("courses").innerHTML = AXIS.COURSES.map(c => `<button class="course${c === course ? " on" : ""}" data-course="${esc(c)}">${esc(c)}</button>`).join("");
+  $("courses").innerHTML = AXIS.COURSES.map(c => `<button class="course${c === AXIS.AI_MODE ? " ai" : ""}${c === course ? " on" : ""}" data-course="${esc(c)}">${c === AXIS.AI_MODE ? "✨ " : ""}${esc(c)}</button>`).join("");
   const n = st.facts.length + st.notes.length;
   $("memCount").hidden = !n; $("memCount").textContent = n;
   $("facts").innerHTML = st.facts.length ? st.facts.map(f => `<div class="item"><span>${esc(f)}</span><button aria-label="Unut" data-forget="${esc(f)}">×</button></div>`).join("")
@@ -396,6 +407,18 @@ function renderPlan() {
 }
 
 function grow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 140) + "px"; sendBtn.disabled = AXIS.busy || readingFiles > 0 || (!box.value.trim() && !pendingFiles.length); }
+
+// Çizimi PNG olarak indir (olmazsa SVG)
+async function downloadArt(it) {
+  const name = (it.text || "axis-cizim").replace(/[^\wçğıöşüÇĞİÖŞÜ -]+/g, "").trim().replace(/\s+/g, "-") || "axis-cizim";
+  const save = (url, ext) => { const a = document.createElement("a"); a.href = url; a.download = `${name}.${ext}`; document.body.appendChild(a); a.click(); a.remove(); };
+  try {
+    const img = new Image(); img.src = svgSrc(it.svg); await img.decode();
+    const c = document.createElement("canvas"); c.width = c.height = 1024;
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 1024, 1024); g.drawImage(img, 0, 0, 1024, 1024);
+    save(c.toDataURL("image/png"), "png");
+  } catch (err) { save(svgSrc(it.svg), "svg"); }
+}
 
 // ---------- Dosya ekleri ----------
 const TEXT_EXT = { py: "python", c: "c", h: "c", cpp: "cpp", hpp: "cpp", ino: "cpp", js: "javascript", html: "html", css: "css", json: "json", md: "markdown", txt: "", csv: "csv", xml: "xml", yml: "yaml", yaml: "yaml", log: "", ini: "ini", cfg: "", toml: "toml", java: "java", cs: "csharp", sh: "bash", bat: "bat" };
@@ -472,6 +495,8 @@ $("resetBtn").addEventListener("click", () => { if (!AXIS.busy) { AXIS.reset(); 
 
 document.body.addEventListener("click", async e => {
   if (e.target.id === "logoutBtn") { await AXIS.logout(); closeSheet(); render(); return; }
+  const dl = e.target.closest("[data-dl]");
+  if (dl) { const it = AXIS.state.log.find(x => String(x.t) === dl.dataset.dl && x.svg); if (it) downloadArt(it); return; }
   const t = e.target.closest("[data-q],[data-fill],[data-course],[data-forget],[data-done],[data-install],[data-upgrade],[data-relogin],.codecopy");
   if (!t) return;
   if (t.dataset.upgrade) { closeSheet(); openUpgrade(); }
